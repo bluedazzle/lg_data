@@ -7,6 +7,7 @@ from sqlalchemy import func
 import sys
 import os
 import redis
+import logging
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -20,22 +21,36 @@ app.config_from_object('celery_config')
 
 
 @app.task(bind=True)
-def period_task(self):
+def top_column_task(self):
+    logging.info('Start collect top 1000 column to redis...')
     session = DBSession()
-    r = redis.StrictRedis(host='localhost', port=6379, db=0)
-    sr = session.execute("""SELECT slug FROM
-                        (
-                            SELECT id,slug FROM core_zhcolumn
-                        ) as l1
-                        JOIN
-                        (
-                            SELECT count(core_zharticle.id) AS c1, belong_id
-                            FROM core_zharticle
-                            GROUP BY belong_id
-                        ) as l2
-                        ON l2.belong_id = l1.id
-                        ORDER BY l2.c1 DESC
-                        LIMIT 1000;""")
-    for itm in sr:
-        r.sadd('top_column_slug', itm[0])
-    r.expire('top_column_slug', 60 * 60 * 23)
+    try:
+        r = redis.StrictRedis(host='localhost', port=6379, db=0)
+        sr = session.execute("""SELECT slug FROM
+                            (
+                                SELECT id,slug FROM core_zhcolumn
+                            ) as l1
+                            JOIN
+                            (
+                                SELECT count(core_zharticle.id) AS c1, belong_id
+                                FROM core_zharticle
+                                GROUP BY belong_id
+                            ) as l2
+                            ON l2.belong_id = l1.id
+                            ORDER BY l2.c1 DESC
+                            LIMIT 1000;""")
+        for itm in sr:
+            r.sadd('top_column_slug', itm[0])
+        r.expire('top_column_slug', 60 * 60 * 23)
+        logging.info('Success collect top column to redis!')
+    except Exception as e:
+        logging.exception('ERROR in collect top column reason {0}'.format(e))
+    finally:
+        session.close()
+
+
+@app.task(bind=True)
+def top_column_spider_task(self):
+    logging.info('Start crawling top column...')
+    # todo
+    logging.info('Success crawl top column!')

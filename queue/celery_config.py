@@ -4,9 +4,13 @@ from datetime import timedelta
 from celery.schedules import crontab
 
 CELERYBEAT_SCHEDULE = {
-    'ptask': {
-        'task': 'tasks.period_task',
-        'schedule': timedelta(seconds=5),
+    'top-column-task': {
+        'task': 'tasks.top_column_task',
+        'schedule': crontab(minute=0, hour=3),
+    },
+    'top-column-spider-task': {
+        'task': 'tasks.top_column_spider_task',
+        'schedule': crontab(minute=0, hour='6,17')
     },
 }
 
