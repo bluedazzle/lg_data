@@ -13,11 +13,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 sys.path.append(BASE_DIR)
 
-from db.models import DBSession
+from db.models import DBSession, ZHArticle
 
 app = Celery('tasks', backend='redis://localhost:6379/0', broker='redis://localhost:6379/0')
 
-app.config_from_object('celery_config')
+app.config_from_object('lg_data.queue.celery_config')
 
 
 @app.task(bind=True)
@@ -54,3 +54,15 @@ def top_column_spider_task(self):
     logging.info('Start crawling top column...')
     # todo
     logging.info('Success crawl top column!')
+
+
+@app.task
+def generate_keywords_task(token):
+    from lg_data.queue.utils import generate_keywords
+
+    session = DBSession()
+    article = session.query(ZHArticle).filter(ZHArticle.md5 == token).first()
+    if not article:
+        return False
+    generate_keywords(article)
+    session.commit()
