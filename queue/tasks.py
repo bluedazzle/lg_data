@@ -53,6 +53,7 @@ def top_column_task(self):
 def top_column_spider_task(self):
     logging.info('Start crawling top column...')
     # todo
+    os.system('cd ~/Projects/Personal/Shadow/ && scrapy crawl topzl')
     logging.info('Success crawl top column!')
 
 
