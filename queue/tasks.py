@@ -92,6 +92,8 @@ def notify_baidu_new_url(urls):
     logging.info('Start notify url to baidu')
     url = 'http://data.zz.baidu.com/urls?site=https://www.wznav.com&token=cSZ81G7f4tUX78WO'
     try:
+        if not urls:
+            return True
         resp = requests.post(url, data=urls)
         json_data = json.loads(resp.content)
         if json_data.get('error', None):
