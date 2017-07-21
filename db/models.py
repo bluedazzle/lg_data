@@ -103,7 +103,7 @@ class ZHColumn(UniqueMixin, Base):
     description = Column(String, nullable=True)
     avatar = Column(String)
     creator_id = Column(Integer, nullable=True)
-    last_time = Column(DateTime)
+    last_update_time = Column(DateTime)
 
     @classmethod
     def unique_hash(cls, *args, **kwargs):

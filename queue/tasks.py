@@ -9,11 +9,12 @@ import os
 import redis
 import logging
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from lg_data.db.models import ZHColumn, DBSession, ZHArticle
 
-sys.path.append(BASE_DIR)
+# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-from db.models import DBSession, ZHArticle
+# sys.path.append(BASE_DIR)
+from lg_data.db.pagination import query_by_pagination
 
 app = Celery('tasks', backend='redis://localhost:6379/0', broker='redis://localhost:6379/0')
 
@@ -25,7 +26,7 @@ def top_column_task(self):
     logging.info('Start collect top 1000 column to redis...')
     session = DBSession()
     try:
-        r = redis.StrictRedis(host='localhost', port=6379, db=0)
+        r = redis.StrictRedis(host='localhost', port=6379, db=1)
         sr = session.execute("""SELECT slug FROM
                             (
                                 SELECT id,slug FROM core_zhcolumn
@@ -67,3 +68,18 @@ def generate_keywords_task(token):
         return False
     generate_keywords(article)
     session.commit()
+
+
+def sync_column_to_redis():
+    logging.info('Start sync column to redis...')
+    session = DBSession()
+    try:
+        cache = redis.StrictRedis(host='localhost', port=6379, db=1)
+        for queryset in query_by_pagination(session, ZHColumn):
+            for column in queryset:
+                cache.sadd('total_column', column.slug)
+        logging.info('Success sync column to redis')
+    except Exception as e:
+        logging.exception('ERROR in sync column reason {0}'.format(e))
+    finally:
+        session.close()
