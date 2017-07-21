@@ -6,7 +6,7 @@ from celery.schedules import crontab
 CELERYBEAT_SCHEDULE = {
     'top-column-task': {
         'task': 'tasks.top_column_task',
-        'schedule': crontab(minute=0, hour=3),
+        'schedule': crontab(minute=0, hour='3, 16'),
     },
     'top-column-spider-task': {
         'task': 'tasks.top_column_spider_task',

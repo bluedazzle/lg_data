@@ -1,19 +1,15 @@
 # coding: utf-8
 from __future__ import unicode_literals
 
-from celery import Celery
-from sqlalchemy import func
-
-import sys
+import json
 import os
 import redis
 import logging
+import requests
+
+from celery import Celery
 
 from lg_data.db.models import ZHColumn, DBSession, ZHArticle
-
-# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-# sys.path.append(BASE_DIR)
 from lg_data.db.pagination import query_by_pagination
 
 app = Celery('tasks', backend='redis://localhost:6379/0', broker='redis://localhost:6379/0')
@@ -21,8 +17,8 @@ app = Celery('tasks', backend='redis://localhost:6379/0', broker='redis://localh
 app.config_from_object('lg_data.queue.celery_config')
 
 
-@app.task(bind=True)
-def top_column_task(self):
+@app.task()
+def top_column_task():
     logging.info('Start collect top 1000 column to redis...')
     session = DBSession()
     try:
@@ -44,18 +40,20 @@ def top_column_task(self):
             r.sadd('top_column_slug', itm[0])
         r.expire('top_column_slug', 60 * 60 * 23)
         logging.info('Success collect top column to redis!')
+        return True
     except Exception as e:
         logging.exception('ERROR in collect top column reason {0}'.format(e))
+        return False
     finally:
         session.close()
 
 
-@app.task(bind=True)
-def top_column_spider_task(self):
+@app.task
+def top_column_spider_task():
     logging.info('Start crawling top column...')
-    # todo
-    os.system('cd ~/Projects/Personal/Shadow/ && scrapy crawl topzl')
+    os.system('cd /var/www/site/run/ && ./topzl.sh')
     logging.info('Success crawl top column!')
+    return True
 
 
 @app.task
@@ -68,8 +66,10 @@ def generate_keywords_task(token):
         return False
     generate_keywords(article)
     session.commit()
+    return True
 
 
+@app.task
 def sync_column_to_redis():
     logging.info('Start sync column to redis...')
     session = DBSession()
@@ -79,7 +79,25 @@ def sync_column_to_redis():
             for column in queryset:
                 cache.sadd('total_column', column.slug)
         logging.info('Success sync column to redis')
+        return True
     except Exception as e:
         logging.exception('ERROR in sync column reason {0}'.format(e))
+        return False
     finally:
         session.close()
+
+
+@app.task
+def notify_baidu_new_url(urls):
+    logging.info('Start notify url to baidu')
+    url = 'http://data.zz.baidu.com/urls?site=https://www.wznav.com&token=cSZ81G7f4tUX78WO'
+    try:
+        resp = requests.post(url, data=urls)
+        json_data = json.loads(resp.content)
+        if json_data.get('error', None):
+            return False
+        logging.info('Success notify url to baidu')
+        return True
+    except Exception as e:
+        logging.exception('ERROR in notify baidu new url reason {0}'.format(e))
+        return False
