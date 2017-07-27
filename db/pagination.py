@@ -17,5 +17,5 @@ def query_by_pagination(session, obj, order_by='id', start_offset=0, limit=1000)
     for i in xrange(start, total_page):
         offset = limit * i
         result = session.query(obj).order_by(order_by).limit(limit).offset(offset).all()
-        logging.info('Current {0}->{1}/{2} {3}%'.format(offset, offset + limit, total, (offset + limit) / total * 100))
+        logging.info('Current {0}->{1}/{2} {3}%'.format(offset, offset + limit, total, float(offset + limit) / total * 100))
         yield result
