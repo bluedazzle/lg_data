@@ -6,11 +6,19 @@ from celery.schedules import crontab
 CELERYBEAT_SCHEDULE = {
     'top-column-task': {
         'task': 'lg_data.queue.tasks.top_column_task',
-        'schedule': crontab(minute=0, hour='3, 16'),
+        'schedule': crontab(minute=0, hour='3, 16', day_of_week='sun-mon,wed-sat'),
     },
     'top-column-spider-task': {
         'task': 'lg_data.queue.tasks.top_column_spider_task',
-        'schedule': crontab(minute=0, hour='6,17')
+        'schedule': crontab(minute=0, hour='6,17', day_of_week='sun-mon,wed-sat')
+    },
+    'total-column-task': {
+        'task': 'lg_data.queue.tasks.total_column_task',
+        'schedule': crontab(minute=0, hour='1', day_of_week='tues'),
+    },
+    'total-column-spider-task': {
+        'task': 'lg_data.queue.tasks.top_column_spider_task',
+        'schedule': crontab(minute=0, hour='2', day_of_week='tues')
     },
 }
 

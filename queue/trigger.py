@@ -1,4 +1,4 @@
 # coding: utf-8
-from lg_data.queue.tasks import top_column_task
+from lg_data.queue.tasks import total_column_task
 
-top_column_task.delay()
+total_column_task.delay()

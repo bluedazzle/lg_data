@@ -49,6 +49,18 @@ def top_column_task():
 
 
 @app.task
+def total_column_task():
+    logging.info('Start collect all column to redis...')
+    session = DBSession()
+    r = redis.StrictRedis(host='localhost', port=6379, db=1)
+    for columns in query_by_pagination(session, ZHColumn):
+        slugs = [column.slug for column in columns]
+        r.sadd('top_column_slug', *slugs)
+    r.expire('top_column_slug', 60 * 60 * 23)
+    logging.info('Success collect all  colmun to redis!')
+
+
+@app.task
 def top_column_spider_task():
     logging.info('Start crawling top column...')
     os.system('cd /var/www/site/run/ && ./topzl.sh')
